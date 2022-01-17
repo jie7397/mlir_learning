@@ -1,47 +1,36 @@
-//===- Ops.td - Toy dialect operation definitions ----------*- tablegen -*-===//
+//===- Ops.td - Jie dialect operation definitions ----------*- tablegen -*-===//
 //
-// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//===----------------------------------------------------------------------===//
-//
-// Defines the operations of the Toy dialect.
+// Defines the operations of the Jie dialect.
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef TOY_OPS
-#define TOY_OPS
+#ifndef Jie_OPS
+#define Jie_OPS
 
 include "mlir/IR/OpBase.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
-// Provide a definition of the 'toy' dialect in the ODS framework so that we
-// can define our operations.
-def Toy_Dialect : Dialect {
-  let name = "toy";
-  let cppNamespace = "::mlir::toy";
+// 定义Dialect，以及c++的namespace
+def Jie_Dialect : Dialect {
+  let name = "jie";
+  let cppNamespace = "::mlir::jie";
 }
 
-// Base class for toy dialect operations. This operation inherits from the base
-// `Op` class in OpBase.td, and provides:
-//   * The parent dialect of the operation.
-//   * The mnemonic for the operation, or the name without the dialect prefix.
-//   * A list of traits for the operation.
-class Toy_Op<string mnemonic, list<OpTrait> traits = []> :
-    Op<Toy_Dialect, mnemonic, traits>;
+// 为了方便后续定义Op，先定义一个Jie Diact的Op模板。
+// OpBase.td中已经定义了OP的基类，如下：
+// class Op<Dialect dialect, string mnemonic, list<OpTrait> props = []>
+// 第一个为dialect,很好理解
+// 第二个名称，例如传入add，Op在IR中名称即为jie.add
+// 第三个即是一些特性的定义，例如NoSideEffect，消除不会有影响，其实就是在这里加一些特性，
+// 会在.inc中直接生成一些接口或者一些属性。
 
-//===----------------------------------------------------------------------===//
-// Toy Operations
-//===----------------------------------------------------------------------===//
+class Jie_Op<string mnemonic, list<OpTrait> traits = []> :
+    Op<Jie_Dialect, mnemonic, traits>;
 
-// We define a toy operation by inheriting from our base 'Toy_Op' class above.
-// Here we provide the mnemonic and a list of traits for the operation. The
-// constant operation is marked as 'NoSideEffect' as it is a pure operation
-// and may be removed if dead.
-def ConstantOp : Toy_Op<"constant", [NoSideEffect]> {
-  // Provide a summary and description for this operation. This can be used to
-  // auto-generate documentation of the operations within our dialect.
+// 定义第一个ConstOp
+def ConstantOp : Jie_Op<"constant", [NoSideEffect]> {
+
+  // summary 和 description可用于生成文档
   let summary = "constant";
   let description = [{
     Constant operation turns a literal into an SSA value. The data is attached
@@ -53,13 +42,16 @@ def ConstantOp : Toy_Op<"constant", [NoSideEffect]> {
     ```
   }];
 
-  // The constant operation takes an attribute as the only input.
+  // 括号中ins表示输入，arguments为Op的输入的名称，多个输出“,”隔开。
   let arguments = (ins F64ElementsAttr:$value);
 
-  // The constant operation returns a single value of TensorType.
+  // 括号中outs表示输出，arguments为Op的输入的名称，多个输出“,”隔开。
   let results = (outs F64Tensor);
 
-  // Specify a parser and printer method.
+  // 括号中outs表示输出，arguments为Op的输入的名称，多个输出“,”隔开。
+  // 这是一些比较特殊的接口，"[]"中的内容会直接替换。但是接口的实现需要自己去实现。
+  // parser,printer,builders,verifier 都是比较常见的自定的接口。
+
   let parser = [{ return ::parseConstantOp(parser, result); }];
   let printer = [{ return ::print(p, *this); }];
 
@@ -80,7 +72,7 @@ def ConstantOp : Toy_Op<"constant", [NoSideEffect]> {
   let verifier = [{ return ::verify(*this); }];
 }
 
-def AddOp : Toy_Op<"add"> {
+def AddOp : Jie_Op<"add"> {
   let summary = "element-wise addition operation";
   let description = [{
     The "add" operation performs element-wise addition between two tensors.
@@ -100,7 +92,7 @@ def AddOp : Toy_Op<"add"> {
   ];
 }
 
-def GenericCallOp : Toy_Op<"generic_call"> {
+def GenericCallOp : Jie_Op<"generic_call"> {
   let summary = "generic call operation";
   let description = [{
     Generic calls represent calls to a user defined function that needs to
@@ -135,7 +127,7 @@ def GenericCallOp : Toy_Op<"generic_call"> {
   ];
 }
 
-def MulOp : Toy_Op<"mul"> {
+def MulOp : Jie_Op<"mul"> {
   let summary = "element-wise multiplication operation";
   let description = [{
     The "mul" operation performs element-wise multiplication between two
@@ -155,7 +147,7 @@ def MulOp : Toy_Op<"mul"> {
   ];
 }
 
-def PrintOp : Toy_Op<"print"> {
+def PrintOp : Jie_Op<"print"> {
   let summary = "print operation";
   let description = [{
     The "print" builtin operation prints a given input tensor, and produces
@@ -168,7 +160,7 @@ def PrintOp : Toy_Op<"print"> {
   let assemblyFormat = "$input attr-dict `:` type($input)";
 }
 
-def ReshapeOp : Toy_Op<"reshape"> {
+def ReshapeOp : Jie_Op<"reshape"> {
   let summary = "tensor reshape operation";
   let description = [{
     Reshape operation is transforming its input tensor into a new tensor with
@@ -189,7 +181,7 @@ def ReshapeOp : Toy_Op<"reshape"> {
   }];
 }
 
-def ReturnOp : Toy_Op<"return", [NoSideEffect, HasParent<"FuncOp">,
+def ReturnOp : Jie_Op<"return", [NoSideEffect, HasParent<"FuncOp">,
                                  Terminator]> {
   let summary = "return operation";
   let description = [{
@@ -227,7 +219,7 @@ def ReturnOp : Toy_Op<"return", [NoSideEffect, HasParent<"FuncOp">,
   let verifier = [{ return ::verify(*this); }];
 }
 
-def TransposeOp : Toy_Op<"transpose"> {
+def TransposeOp : Jie_Op<"transpose"> {
   let summary = "transpose operation";
 
   let arguments = (ins F64Tensor:$input);
@@ -246,4 +238,4 @@ def TransposeOp : Toy_Op<"transpose"> {
   let verifier = [{ return ::verify(*this); }];
 }
 
-#endif // TOY_OPS
+#endif // JIE_OPS

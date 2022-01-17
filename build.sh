@@ -1,4 +1,4 @@
-LLVM_REPO=/home/jie.liu/workspace/playground/llvm/llvm-project
+LLVM_REPO=3rdparty/llvm-project
 BUILD_DIR=build
 
 rm -rf $BUILD_DIR
