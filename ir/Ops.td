@@ -1,34 +1,38 @@
-//===- Ops.td - Jie dialect operation definitions ----------*- tablegen -*-===//
+//===- Ops.td - Onepiece dialect operation definitions ----------*- tablegen -*-===//
 //
-// Defines the operations of the Jie dialect.
+// Defines the operations of the Onepiece dialect.
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef Jie_OPS
-#define Jie_OPS
+#ifndef Onepiece_OPS
+#define Onepiece_OPS
 
 include "mlir/IR/OpBase.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
+include "mlir/Dialect/LLVMIR/LLVMDialect.td"
+include "mlir/Dialect/LLVMIR/LLVMInterfaces.td"
+include "mlir/IR/AttrTypeBase.td"
+include "mlir/IR/CommonAttrConstraints.td"
 
 // 定义Dialect，以及c++的namespace
-def Jie_Dialect : Dialect {
-  let name = "jie";
-  let cppNamespace = "::mlir::jie";
+def Onepiece_Dialect : Dialect {
+  let name = "Onepiece";
+  let cppNamespace = "::mlir::Onepiece";
 }
 
-// 为了方便后续定义Op，先定义一个Jie Diact的Op模板。
+// 为了方便后续定义Op，先定义一个Onepiece Diact的Op模板。
 // OpBase.td中已经定义了OP的基类，如下：
 // class Op<Dialect dialect, string mnemonic, list<OpTrait> props = []>
 // 第一个为dialect,很好理解
-// 第二个名称，例如传入add，Op在IR中名称即为jie.add
+// 第二个名称，例如传入add，Op在IR中名称即为Onepiece.add
 // 第三个即是一些特性的定义，例如NoSideEffect，消除不会有影响，其实就是在这里加一些特性，
 // 会在.inc中直接生成一些接口或者一些属性。
 
-class Jie_Op<string mnemonic, list<OpTrait> traits = []> :
-    Op<Jie_Dialect, mnemonic, traits>;
+class Onepiece_Op<string mnemonic, list<Trait> traits = []> :
+    Op<Onepiece_Dialect, mnemonic, traits>;
 
 // 定义第一个ConstOp
-def ConstantOp : Jie_Op<"constant", [NoSideEffect]> {
+def ConstantOp : Onepiece_Op<"constant"> {
 
   // summary 和 description可用于生成文档
   let summary = "constant";
@@ -42,6 +46,8 @@ def ConstantOp : Jie_Op<"constant", [NoSideEffect]> {
     ```
   }];
 
+  let hasVerifier = 1;
+
   // 括号中ins表示输入，arguments为Op的输入的名称，多个输出“,”隔开。
   let arguments = (ins F64ElementsAttr:$value);
 
@@ -52,8 +58,8 @@ def ConstantOp : Jie_Op<"constant", [NoSideEffect]> {
   // 这是一些比较特殊的接口，"[]"中的内容会直接替换。但是接口的实现需要自己去实现。
   // parser,printer,builders,verifier 都是比较常见的自定的接口。
 
-  let parser = [{ return ::parseConstantOp(parser, result); }];
-  let printer = [{ return ::print(p, *this); }];
+  // let parser = [{ return ::parseConstantOp(parser, result); }];
+  // let printer = [{ return ::print(p, *this); }];
 
   // Add custom build methods for the constant operation. These method populates
   // the `state` that MLIR uses to create operations, i.e. these are used when
@@ -69,10 +75,10 @@ def ConstantOp : Jie_Op<"constant", [NoSideEffect]> {
   ];
 
   // Invoke a static verify method to verify this constant operation.
-  let verifier = [{ return ::verify(*this); }];
+  // let verifier = [{ return ::verify(*this); }];
 }
 
-def AddOp : Jie_Op<"add"> {
+def AddOp : Onepiece_Op<"add"> {
   let summary = "element-wise addition operation";
   let description = [{
     The "add" operation performs element-wise addition between two tensors.
@@ -83,8 +89,8 @@ def AddOp : Jie_Op<"add"> {
   let results = (outs F64Tensor);
 
   // Specify a parser and printer method.
-  let parser = [{ return ::parseBinaryOp(parser, result); }];
-  let printer = [{ return ::printBinaryOp(p, *this); }];
+  // let parser = [{ return ::parseBinaryOp(parser, result); }];
+  // let printer = [{ return ::printBinaryOp(p, *this); }];
 
   // Allow building an AddOp with from the two input operands.
   let builders = [
@@ -92,7 +98,7 @@ def AddOp : Jie_Op<"add"> {
   ];
 }
 
-def GenericCallOp : Jie_Op<"generic_call"> {
+def GenericCallOp : Onepiece_Op<"generic_call"> {
   let summary = "generic call operation";
   let description = [{
     Generic calls represent calls to a user defined function that needs to
@@ -127,7 +133,7 @@ def GenericCallOp : Jie_Op<"generic_call"> {
   ];
 }
 
-def MulOp : Jie_Op<"mul"> {
+def MulOp : Onepiece_Op<"mul"> {
   let summary = "element-wise multiplication operation";
   let description = [{
     The "mul" operation performs element-wise multiplication between two
@@ -138,8 +144,8 @@ def MulOp : Jie_Op<"mul"> {
   let results = (outs F64Tensor);
 
   // Specify a parser and printer method.
-  let parser = [{ return ::parseBinaryOp(parser, result); }];
-  let printer = [{ return ::printBinaryOp(p, *this); }];
+  // let parser = [{ return ::parseBinaryOp(parser, result); }];
+  // let printer = [{ return ::printBinaryOp(p, *this); }];
 
   // Allow building a MulOp with from the two input operands.
   let builders = [
@@ -147,7 +153,7 @@ def MulOp : Jie_Op<"mul"> {
   ];
 }
 
-def PrintOp : Jie_Op<"print"> {
+def PrintOp : Onepiece_Op<"print"> {
   let summary = "print operation";
   let description = [{
     The "print" builtin operation prints a given input tensor, and produces
@@ -160,7 +166,7 @@ def PrintOp : Jie_Op<"print"> {
   let assemblyFormat = "$input attr-dict `:` type($input)";
 }
 
-def ReshapeOp : Jie_Op<"reshape"> {
+def ReshapeOp : Onepiece_Op<"reshape"> {
   let summary = "tensor reshape operation";
   let description = [{
     Reshape operation is transforming its input tensor into a new tensor with
@@ -181,7 +187,7 @@ def ReshapeOp : Jie_Op<"reshape"> {
   }];
 }
 
-def ReturnOp : Jie_Op<"return", [NoSideEffect, HasParent<"FuncOp">,
+def ReturnOp : Onepiece_Op<"return", [HasParent<"FuncOp">,
                                  Terminator]> {
   let summary = "return operation";
   let description = [{
@@ -216,10 +222,10 @@ def ReturnOp : Jie_Op<"return", [NoSideEffect, HasParent<"FuncOp">,
   }];
 
   // Invoke a static verify method to verify this return operation.
-  let verifier = [{ return ::verify(*this); }];
+  // let verifier = [{ return ::verify(*this); }];
 }
 
-def TransposeOp : Jie_Op<"transpose"> {
+def TransposeOp : Onepiece_Op<"transpose"> {
   let summary = "transpose operation";
 
   let arguments = (ins F64Tensor:$input);
@@ -235,7 +241,8 @@ def TransposeOp : Jie_Op<"transpose"> {
   ];
 
   // Invoke a static verify method to verify this transpose operation.
-  let verifier = [{ return ::verify(*this); }];
+  // let verifier = [{ return ::verify(*this); }];
+  let hasVerifier = 1;
 }
 
-#endif // JIE_OPS
+#endif // Onepiece_OPS
